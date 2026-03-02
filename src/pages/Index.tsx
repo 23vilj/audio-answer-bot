@@ -1,11 +1,8 @@
-import { useState } from "react";
 import { AudioUploader } from "@/components/AudioUploader";
 import { MicRecorder } from "@/components/MicRecorder";
 import { PipelineStep } from "@/components/PipelineStep";
 import { AudioPlayer } from "@/components/AudioPlayer";
-import { ApiSettings } from "@/components/ApiSettings";
 import { useVoicePipeline } from "@/hooks/useVoicePipeline";
-import { ApiConfig, defaultApiConfig } from "@/config/api";
 import type { PipelineStage } from "@/types/pipeline";
 import { RotateCcw, Zap } from "lucide-react";
 
@@ -22,8 +19,7 @@ function getCompletedStages(current: PipelineStage): PipelineStage[] {
 }
 
 const Index = () => {
-  const [config, setConfig] = useState<ApiConfig>(defaultApiConfig);
-  const { state, processAudio, reset } = useVoicePipeline(config);
+  const { state, processAudio, reset } = useVoicePipeline();
   const isProcessing = !["idle", "complete", "error"].includes(state.stage);
 
   return (
@@ -63,8 +59,8 @@ const Index = () => {
             <MicRecorder onRecorded={processAudio} disabled={isProcessing} />
           </div>
 
-          {/* API Settings */}
-          <ApiSettings config={config} onChange={setConfig} />
+
+          {/* Pipeline progress */}
 
           {/* Pipeline progress */}
           {state.stage !== "idle" && (

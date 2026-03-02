@@ -1,13 +1,11 @@
 import { useState, useCallback } from "react";
-import { ApiConfig } from "@/config/api";
+import { apiConfig } from "@/config/api";
 import { PipelineState, initialPipelineState } from "@/types/pipeline";
 
-export function useVoicePipeline(config: ApiConfig) {
+export function useVoicePipeline() {
   const [state, setState] = useState<PipelineState>(initialPipelineState);
 
-  const reset = useCallback(() => {
-    setState(initialPipelineState);
-  }, []);
+  const reset = useCallback(() => setState(initialPipelineState), []);
 
   const processAudio = useCallback(async (audioFile: File) => {
     setState({ ...initialPipelineState, stage: "uploading" });
@@ -18,8 +16,9 @@ export function useVoicePipeline(config: ApiConfig) {
       const sttForm = new FormData();
       sttForm.append("audio", audioFile);
 
-      const sttRes = await fetch(config.sttEndpoint, {
+      const sttRes = await fetch(apiConfig.stt.url, {
         method: "POST",
+        headers: { ...apiConfig.stt.headers },
         body: sttForm,
       });
       if (!sttRes.ok) throw new Error(`STT failed: ${sttRes.status}`);
@@ -29,9 +28,9 @@ export function useVoicePipeline(config: ApiConfig) {
       setState(s => ({ ...s, transcript, stage: "thinking" }));
 
       // Step 2: AI
-      const aiRes = await fetch(config.aiEndpoint, {
+      const aiRes = await fetch(apiConfig.ai.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...apiConfig.ai.headers },
         body: JSON.stringify({ text: transcript, message: transcript }),
       });
       if (!aiRes.ok) throw new Error(`AI failed: ${aiRes.status}`);
@@ -41,9 +40,9 @@ export function useVoicePipeline(config: ApiConfig) {
       setState(s => ({ ...s, aiResponse, stage: "synthesizing" }));
 
       // Step 3: TTS
-      const ttsRes = await fetch(config.ttsEndpoint, {
+      const ttsRes = await fetch(apiConfig.tts.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...apiConfig.tts.headers },
         body: JSON.stringify({ text: aiResponse }),
       });
       if (!ttsRes.ok) throw new Error(`TTS failed: ${ttsRes.status}`);
@@ -56,7 +55,7 @@ export function useVoicePipeline(config: ApiConfig) {
       const message = err instanceof Error ? err.message : "Unknown error";
       setState(s => ({ ...s, stage: "error", error: message }));
     }
-  }, [config]);
+  }, []);
 
   return { state, processAudio, reset };
 }
