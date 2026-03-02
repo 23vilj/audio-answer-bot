@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AudioUploader } from "@/components/AudioUploader";
+import { MicRecorder } from "@/components/MicRecorder";
 import { PipelineStep } from "@/components/PipelineStep";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { ApiSettings } from "@/components/ApiSettings";
@@ -51,8 +52,16 @@ const Index = () => {
       {/* Main content */}
       <main className="flex-1 flex items-start justify-center px-6 py-10">
         <div className="w-full max-w-2xl space-y-6">
-          {/* Upload area */}
-          <AudioUploader onFileSelected={processAudio} disabled={isProcessing} />
+          {/* Input options */}
+          <div className="space-y-3">
+            <AudioUploader onFileSelected={processAudio} disabled={isProcessing} />
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-display text-muted-foreground">or</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+            <MicRecorder onRecorded={processAudio} disabled={isProcessing} />
+          </div>
 
           {/* API Settings */}
           <ApiSettings config={config} onChange={setConfig} />
