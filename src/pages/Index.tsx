@@ -1,7 +1,6 @@
 import { AudioUploader } from "@/components/AudioUploader";
-import { MicRecorder } from "@/components/MicRecorder";
+import { VoiceOrb } from "@/components/VoiceOrb";
 import { PipelineStep } from "@/components/PipelineStep";
-import { AudioPlayer } from "@/components/AudioPlayer";
 import { useVoicePipeline } from "@/hooks/useVoicePipeline";
 import type { PipelineStage } from "@/types/pipeline";
 import { RotateCcw, Zap } from "lucide-react";
@@ -47,20 +46,26 @@ const Index = () => {
 
       {/* Main content */}
       <main className="flex-1 flex items-start justify-center px-6 py-10">
-        <div className="w-full max-w-2xl space-y-6">
-          {/* Input options */}
-          <div className="space-y-3">
-            <AudioUploader onFileSelected={processAudio} disabled={isProcessing} />
-            <div className="flex items-center gap-3">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-xs font-display text-muted-foreground">or</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-            <MicRecorder onRecorded={processAudio} disabled={isProcessing} />
+        <div className="w-full max-w-2xl space-y-8">
+          {/* Central Orb */}
+          <div className="flex justify-center">
+            <VoiceOrb
+              onRecorded={processAudio}
+              disabled={isProcessing}
+              isProcessing={isProcessing}
+              audioSrc={state.audioResponseUrl}
+            />
           </div>
 
-
-          {/* Pipeline progress */}
+          {/* File upload fallback */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs font-display text-muted-foreground">or upload a file</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+            <AudioUploader onFileSelected={processAudio} disabled={isProcessing} />
+          </div>
 
           {/* Pipeline progress */}
           {state.stage !== "idle" && (
@@ -103,16 +108,6 @@ const Index = () => {
               <div className="bg-surface rounded-xl p-4 border border-primary/20">
                 <p className="text-sm text-foreground leading-relaxed">{state.aiResponse}</p>
               </div>
-            </div>
-          )}
-
-          {/* Audio response */}
-          {state.audioResponseUrl && (
-            <div className="space-y-2">
-              <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
-                Audio Response
-              </p>
-              <AudioPlayer src={state.audioResponseUrl} />
             </div>
           )}
 
