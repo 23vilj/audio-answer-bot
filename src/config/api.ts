@@ -13,8 +13,9 @@ export const apiConfig = {
     model: "kb-whisper-large",
   },
   ai: {
-    url: "http://localhost:8000/ai",
-    headers: {} as Record<string, string>,
+    url: "https://teachgpt-teachgpt-test.apps.okd.ssis.nu/api/v1/chat/completions",
+    headers: { Authorization: `Bearer ${API_KEY}` } as Record<string, string>,
+    model: "Meta-Llama-3.3-70B-Instruct-AWQ",
   },
   tts: {
     url: "https://teachgpt-teachgpt-test.apps.okd.ssis.nu/api/v1/audio/speech",

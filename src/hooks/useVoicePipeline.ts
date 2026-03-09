@@ -32,11 +32,14 @@ export function useVoicePipeline() {
       const aiRes = await fetch(apiConfig.ai.url, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...apiConfig.ai.headers },
-        body: JSON.stringify({ text: transcript, message: transcript }),
+        body: JSON.stringify({
+          model: apiConfig.ai.model,
+          messages: [{ role: "user", content: transcript }],
+        }),
       });
       if (!aiRes.ok) throw new Error(`AI failed: ${aiRes.status}`);
       const aiData = await aiRes.json();
-      const aiResponse = aiData.text || aiData.response || aiData.answer || JSON.stringify(aiData);
+      const aiResponse = aiData.choices?.[0]?.message?.content || JSON.stringify(aiData);
 
       setState(s => ({ ...s, aiResponse, stage: "synthesizing" }));
 
