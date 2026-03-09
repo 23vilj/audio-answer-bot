@@ -14,7 +14,8 @@ export function useVoicePipeline() {
       // Step 1: STT
       setState(s => ({ ...s, stage: "transcribing" }));
       const sttForm = new FormData();
-      sttForm.append("audio", audioFile);
+      sttForm.append("file", audioFile);
+      sttForm.append("model", apiConfig.stt.model);
 
       const sttRes = await fetch(apiConfig.stt.url, {
         method: "POST",
@@ -42,8 +43,14 @@ export function useVoicePipeline() {
       // Step 3: TTS
       const ttsRes = await fetch(apiConfig.tts.url, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...apiConfig.tts.headers },
-        body: JSON.stringify({ text: aiResponse }),
+        headers: { ...apiConfig.tts.headers },
+        body: JSON.stringify({
+          model: apiConfig.tts.model,
+          voice: apiConfig.tts.voice,
+          input: aiResponse,
+          language: apiConfig.tts.language,
+          response_format: apiConfig.tts.response_format,
+        }),
       });
       if (!ttsRes.ok) throw new Error(`TTS failed: ${ttsRes.status}`);
 
