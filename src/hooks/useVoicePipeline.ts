@@ -5,7 +5,12 @@ import { PipelineState, initialPipelineState } from "@/types/pipeline";
 export function useVoicePipeline() {
   const [state, setState] = useState<PipelineState>(initialPipelineState);
 
-  const reset = useCallback(() => setState(initialPipelineState), []);
+  const reset = useCallback(() => {
+    setState(prev => {
+      if (prev.audioResponseUrl) URL.revokeObjectURL(prev.audioResponseUrl);
+      return initialPipelineState;
+    });
+  }, []);
 
   const processAudio = useCallback(async (audioFile: File) => {
     setState({ ...initialPipelineState, stage: "uploading" });
