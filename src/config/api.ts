@@ -4,7 +4,20 @@
  * ═══════════════════════════════════════════════════════
  */
 
-const API_KEY = "YOUR_API_KEY_HERE";
+// Try to import from local secrets file (not tracked by git)
+// Falls back to placeholder if local file doesn't exist
+let API_KEY = "YOUR_API_KEY_HERE";
+
+try {
+  // Dynamic import to avoid build errors if file doesn't exist
+  const localSecrets = await import("./api.local.ts");
+  if (localSecrets.LOCAL_API_KEY && localSecrets.LOCAL_API_KEY !== "YOUR_API_KEY_HERE") {
+    API_KEY = localSecrets.LOCAL_API_KEY;
+  }
+} catch {
+  // Local secrets file doesn't exist, use placeholder
+  console.log("[API] Using placeholder API key. Create src/config/api.local.ts for local development.");
+}
 
 export const apiConfig = {
   stt: {
