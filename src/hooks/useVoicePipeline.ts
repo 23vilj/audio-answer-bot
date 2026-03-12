@@ -39,7 +39,10 @@ export function useVoicePipeline() {
         headers: { "Content-Type": "application/json", ...apiConfig.ai.headers },
         body: JSON.stringify({
           model: apiConfig.ai.model,
-          messages: [{ role: "user", content: transcript }],
+          messages: [
+            { role: "system", content: "You are a helpful voice assistant. Keep responses concise and natural for speech." },
+            { role: "user", content: transcript },
+          ],
         }),
       });
       if (!aiRes.ok) throw new Error(`AI failed: ${aiRes.status}`);
