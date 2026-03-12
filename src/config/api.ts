@@ -4,7 +4,11 @@
  * ═══════════════════════════════════════════════════════
  */
 
-const API_KEY = "YOUR_API_KEY_HERE";
+// Import local secrets (not tracked by git)
+// Create src/config/api.local.ts with your actual API key
+import { LOCAL_API_KEY } from "./api.local";
+
+const API_KEY = LOCAL_API_KEY !== "YOUR_API_KEY_HERE" ? LOCAL_API_KEY : "YOUR_API_KEY_HERE";
 
 export const apiConfig = {
   stt: {
