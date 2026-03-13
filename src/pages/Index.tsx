@@ -21,6 +21,20 @@ const Index = () => {
   const { state, processAudio, reset } = useVoicePipeline();
   const isProcessing = !["idle", "complete", "error"].includes(state.stage);
 
+  // Past conversation pairs (exclude the current exchange)
+  const pastPairs: { user: string; assistant: string }[] = [];
+  const historyWithoutCurrent = state.history.slice(
+    0,
+    state.stage === "complete" ? state.history.length - 2 : state.history.length - 1
+  );
+  for (let i = 0; i < historyWithoutCurrent.length; i += 2) {
+    const user = historyWithoutCurrent[i];
+    const assistant = historyWithoutCurrent[i + 1];
+    if (user && assistant) {
+      pastPairs.push({ user: user.content, assistant: assistant.content });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -38,7 +52,7 @@ const Index = () => {
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-display"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Reset
+              New conversation
             </button>
           )}
         </div>
@@ -67,8 +81,27 @@ const Index = () => {
             <AudioUploader onFileSelected={processAudio} disabled={isProcessing} />
           </div>
 
+          {/* Past conversation history */}
+          {pastPairs.length > 0 && (
+            <div className="space-y-4">
+              <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
+                Conversation
+              </p>
+              {pastPairs.map((pair, i) => (
+                <div key={i} className="space-y-2 opacity-60">
+                  <div className="bg-surface rounded-xl p-4 border border-border">
+                    <p className="text-sm text-foreground leading-relaxed">"{pair.user}"</p>
+                  </div>
+                  <div className="bg-surface rounded-xl p-4 border border-primary/20">
+                    <p className="text-sm text-foreground leading-relaxed">{pair.assistant}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Pipeline progress */}
-          {state.stage !== "idle" && (
+          {!["idle", "complete"].includes(state.stage) && (
             <div className="space-y-2">
               <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
                 Pipeline

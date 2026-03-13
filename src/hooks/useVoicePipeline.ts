@@ -1,23 +1,35 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { apiConfig } from "@/config/api";
-import { PipelineState, initialPipelineState } from "@/types/pipeline";
+import { PipelineState, initialPipelineState, ChatMessage } from "@/types/pipeline";
 
 export function useVoicePipeline() {
   const [state, setState] = useState<PipelineState>(initialPipelineState);
+  const historyRef = useRef<ChatMessage[]>([]);
 
   const reset = useCallback(() => {
     setState(prev => {
       if (prev.audioResponseUrl) URL.revokeObjectURL(prev.audioResponseUrl);
       return initialPipelineState;
     });
+    historyRef.current = [];
   }, []);
 
   const processAudio = useCallback(async (audioFile: File) => {
-    setState({ ...initialPipelineState, stage: "uploading" });
+    // Revoke previous audio URL but keep history
+    setState(prev => {
+      if (prev.audioResponseUrl) URL.revokeObjectURL(prev.audioResponseUrl);
+      return {
+        ...prev,
+        stage: "transcribing",
+        transcript: null,
+        aiResponse: null,
+        audioResponseUrl: null,
+        error: null,
+      };
+    });
 
     try {
       // Step 1: STT
-      setState(s => ({ ...s, stage: "transcribing" }));
       const sttForm = new FormData();
       sttForm.append("file", audioFile);
       sttForm.append("model", apiConfig.stt.model);
@@ -31,9 +43,17 @@ export function useVoicePipeline() {
       const sttData = await sttRes.json();
       const transcript = sttData.text || sttData.transcript || JSON.stringify(sttData);
 
-      setState(s => ({ ...s, transcript, stage: "thinking" }));
+      // Add user message to history
+      historyRef.current = [...historyRef.current, { role: "user", content: transcript }];
 
-      // Step 2: AI
+      setState(s => ({
+        ...s,
+        transcript,
+        stage: "thinking",
+        history: [...historyRef.current],
+      }));
+
+      // Step 2: AI with full conversation history
       const aiRes = await fetch(apiConfig.ai.url, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...apiConfig.ai.headers },
@@ -41,7 +61,7 @@ export function useVoicePipeline() {
           model: apiConfig.ai.model,
           messages: [
             { role: "system", content: "You are a helpful voice assistant. Keep responses concise and natural for speech." },
-            { role: "user", content: transcript },
+            ...historyRef.current,
           ],
         }),
       });
@@ -49,7 +69,15 @@ export function useVoicePipeline() {
       const aiData = await aiRes.json();
       const aiResponse = aiData.choices?.[0]?.message?.content || JSON.stringify(aiData);
 
-      setState(s => ({ ...s, aiResponse, stage: "synthesizing" }));
+      // Add assistant message to history
+      historyRef.current = [...historyRef.current, { role: "assistant", content: aiResponse }];
+
+      setState(s => ({
+        ...s,
+        aiResponse,
+        stage: "synthesizing",
+        history: [...historyRef.current],
+      }));
 
       // Step 3: TTS
       const ttsRes = await fetch(apiConfig.tts.url, {
