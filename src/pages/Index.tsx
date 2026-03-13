@@ -102,7 +102,7 @@ const Index = () => {
           )}
 
           {/* Pipeline progress */}
-          {!["idle", "complete"].includes(state.stage) && (
+          {!["idle", "complete", "playing"].includes(state.stage) && state.stage !== "error" && (
             <div className="space-y-2">
               <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
                 Pipeline
