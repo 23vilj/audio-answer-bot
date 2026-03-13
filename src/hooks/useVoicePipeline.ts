@@ -149,17 +149,21 @@ export function useVoicePipeline() {
       let fullText = "";
       let processedUpTo = 0;
       const ttsPromises: Promise<void>[] = [];
+      let sseBuffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
+        sseBuffer += decoder.decode(value, { stream: true });
+        const lines = sseBuffer.split("\n");
+        // Keep the last element as it may be incomplete
+        sseBuffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const data = line.slice(6).trim();
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
           if (data === "[DONE]") continue;
 
           try {
