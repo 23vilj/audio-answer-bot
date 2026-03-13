@@ -1,4 +1,4 @@
-export type PipelineStage = "idle" | "uploading" | "transcribing" | "thinking" | "synthesizing" | "complete" | "error";
+export type PipelineStage = "idle" | "uploading" | "transcribing" | "thinking" | "synthesizing" | "playing" | "complete" | "error";
 
 export interface ChatMessage {
   role: "user" | "assistant";
