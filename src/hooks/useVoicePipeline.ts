@@ -59,7 +59,9 @@ export function useVoicePipeline() {
     }
   }, []);
 
-  const enqueueTTS = useCallback(async (sentence: string) => {
+   const enqueueTTS = useCallback(async (sentence: string) => {
+    const trimmed = sentence.trim();
+    if (!trimmed) return;
     try {
       const blob = await textToSpeech(sentence);
       const url = URL.createObjectURL(blob);
