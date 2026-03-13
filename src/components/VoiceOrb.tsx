@@ -104,6 +104,7 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
     audio.onended = () => {
       setIsPlaying(false);
       setLevels(new Array(NUM_POINTS).fill(0));
+      onPlaybackEnd?.();
     };
 
     return () => {
