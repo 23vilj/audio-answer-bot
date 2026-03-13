@@ -68,6 +68,7 @@ const Index = () => {
               disabled={isProcessing}
               isProcessing={isProcessing}
               audioSrc={state.audioResponseUrl}
+              onPlaybackEnd={continueConversation}
             />
           </div>
 
