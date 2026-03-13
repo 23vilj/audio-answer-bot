@@ -6,11 +6,12 @@ interface VoiceOrbProps {
   disabled?: boolean;
   audioSrc?: string | null;
   isProcessing?: boolean;
+  onPlaybackEnd?: () => void;
 }
 
 const NUM_POINTS = 32;
 
-export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing }: VoiceOrbProps) {
+export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlaybackEnd }: VoiceOrbProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -103,6 +104,7 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing }: Voice
     audio.onended = () => {
       setIsPlaying(false);
       setLevels(new Array(NUM_POINTS).fill(0));
+      onPlaybackEnd?.();
     };
 
     return () => {
