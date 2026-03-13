@@ -14,7 +14,7 @@ export const apiConfig = {
   stt: {
     url: "https://teachgpt-teachgpt-test.apps.okd.ssis.nu/api/v1/audio/transcriptions",
     headers: { Authorization: `Bearer ${API_KEY}` } as Record<string, string>,
-    model: "kb-whisper-large",
+    model: "faster-distil-whisper-small.en",
   },
   ai: {
     url: "https://teachgpt-teachgpt-test.apps.okd.ssis.nu/api/v1/chat/completions",
