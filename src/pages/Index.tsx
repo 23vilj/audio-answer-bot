@@ -21,15 +21,15 @@ const Index = () => {
   const { state, processAudio, reset, onPlaybackEnd } = useVoicePipeline();
   const isProcessing = !["idle", "complete", "error"].includes(state.stage);
 
-  // Past conversation pairs (exclude the current exchange)
+  // Past conversation pairs (exclude the current exchange still displayed)
   const pastPairs: { user: string; assistant: string }[] = [];
-  const historyWithoutCurrent = state.history.slice(
-    0,
-    state.stage === "complete" ? state.history.length - 2 : state.history.length - 1
-  );
-  for (let i = 0; i < historyWithoutCurrent.length; i += 2) {
-    const user = historyWithoutCurrent[i];
-    const assistant = historyWithoutCurrent[i + 1];
+  const shouldExcludeCurrent = state.transcript !== null; // current turn is displayed separately
+  const historyForPast = shouldExcludeCurrent
+    ? state.history.slice(0, Math.max(0, state.history.length - 2))
+    : state.history;
+  for (let i = 0; i < historyForPast.length; i += 2) {
+    const user = historyForPast[i];
+    const assistant = historyForPast[i + 1];
     if (user && assistant) {
       pastPairs.push({ user: user.content, assistant: assistant.content });
     }
