@@ -103,5 +103,19 @@ export function useVoicePipeline() {
     }
   }, []);
 
-  return { state, processAudio, reset };
+  const continueConversation = useCallback(() => {
+    setState(prev => {
+      if (prev.audioResponseUrl) URL.revokeObjectURL(prev.audioResponseUrl);
+      return {
+        ...prev,
+        stage: "idle",
+        transcript: null,
+        aiResponse: null,
+        audioResponseUrl: null,
+        error: null,
+      };
+    });
+  }, []);
+
+  return { state, processAudio, reset, continueConversation };
 }

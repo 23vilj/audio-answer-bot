@@ -6,6 +6,7 @@ interface VoiceOrbProps {
   disabled?: boolean;
   audioSrc?: string | null;
   isProcessing?: boolean;
+  onPlaybackEnd?: () => void;
 }
 
 const NUM_POINTS = 32;
