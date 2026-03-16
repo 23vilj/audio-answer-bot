@@ -2,8 +2,9 @@ import { AudioUploader } from "@/components/AudioUploader";
 import { VoiceOrb } from "@/components/VoiceOrb";
 import { PipelineStep } from "@/components/PipelineStep";
 import { useVoicePipeline } from "@/hooks/useVoicePipeline";
+import { useAnimations } from "@/hooks/useAnimations";
 import type { PipelineStage } from "@/types/pipeline";
-import { RotateCcw, Zap } from "lucide-react";
+import { RotateCcw, Zap, Sparkles, ZapOff } from "lucide-react";
 
 const steps: { stage: PipelineStage; label: string; description: string }[] = [
   { stage: "transcribing", label: "Transcribing", description: "Converting speech to text" },
