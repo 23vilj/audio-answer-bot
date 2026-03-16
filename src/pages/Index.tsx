@@ -2,8 +2,9 @@ import { AudioUploader } from "@/components/AudioUploader";
 import { VoiceOrb } from "@/components/VoiceOrb";
 import { PipelineStep } from "@/components/PipelineStep";
 import { useVoicePipeline } from "@/hooks/useVoicePipeline";
+import { useAnimations } from "@/hooks/useAnimations";
 import type { PipelineStage } from "@/types/pipeline";
-import { RotateCcw, Zap } from "lucide-react";
+import { RotateCcw, Zap, Sparkles, ZapOff } from "lucide-react";
 
 const steps: { stage: PipelineStage; label: string; description: string }[] = [
   { stage: "transcribing", label: "Transcribing", description: "Converting speech to text" },
@@ -19,6 +20,7 @@ function getCompletedStages(current: PipelineStage): PipelineStage[] {
 
 const Index = () => {
   const { state, processAudio, reset, onPlaybackEnd } = useVoicePipeline();
+  const { animationsEnabled, toggleAnimations } = useAnimations();
   const isProcessing = !["idle", "complete", "error"].includes(state.stage);
 
   // Past conversation pairs (exclude the current exchange still displayed)
@@ -46,15 +48,25 @@ const Index = () => {
             </div>
             <h1 className="text-lg font-bold tracking-tight">Voice Oracle</h1>
           </div>
-          {state.stage !== "idle" && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={reset}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-display"
+              onClick={toggleAnimations}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-display"
+              title={animationsEnabled ? "Disable animations" : "Enable animations"}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              New conversation
+              {animationsEnabled ? <Sparkles className="w-3.5 h-3.5" /> : <ZapOff className="w-3.5 h-3.5" />}
+              {animationsEnabled ? "Effects on" : "Effects off"}
             </button>
-          )}
+            {state.stage !== "idle" && (
+              <button
+                onClick={reset}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-display"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                New conversation
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -123,7 +135,7 @@ const Index = () => {
 
           {/* Transcript */}
           {state.transcript && (
-            <div className="space-y-2 animate-float-up">
+            <div className={`space-y-2 ${animationsEnabled ? "animate-float-up" : ""}`}>
               <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
                 You said
               </p>
@@ -135,7 +147,7 @@ const Index = () => {
 
           {/* AI Response */}
           {state.aiResponse && (
-            <div className="space-y-2 animate-float-up">
+            <div className={`space-y-2 ${animationsEnabled ? "animate-float-up" : ""}`}>
               <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
                 AI Response
               </p>

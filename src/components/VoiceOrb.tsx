@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Mic, Square } from "lucide-react";
+import { useAnimations } from "@/hooks/useAnimations";
 
 interface VoiceOrbProps {
   onRecorded: (file: File) => void;
@@ -10,8 +11,10 @@ interface VoiceOrbProps {
 }
 
 const NUM_POINTS = 32;
+const THROTTLE_MS = 50; // ~20fps instead of 60fps for RPi
 
 export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlaybackEnd }: VoiceOrbProps) {
+  const { animationsEnabled } = useAnimations();
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -26,6 +29,7 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const rafRef = useRef<number>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const lastTickRef = useRef(0);
 
   // Recording
   const startRecording = useCallback(async () => {
@@ -73,6 +77,17 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
     const audio = new Audio(audioSrc);
     audioRef.current = audio;
 
+    // Skip visualizer entirely when animations disabled
+    if (!animationsEnabled) {
+      audio.play();
+      setIsPlaying(true);
+      audio.onended = () => {
+        setIsPlaying(false);
+        onPlaybackEnd?.();
+      };
+      return () => { audio.pause(); };
+    }
+
     const ctx = new AudioContext();
     audioCtxRef.current = ctx;
     const analyser = ctx.createAnalyser();
@@ -89,14 +104,18 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-    const tick = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const newLevels: number[] = [];
-      for (let i = 0; i < NUM_POINTS; i++) {
-        const idx = Math.floor((i / NUM_POINTS) * dataArray.length);
-        newLevels.push(dataArray[idx] / 255);
+    const tick = (now: number) => {
+      // Throttle to ~20fps
+      if (now - lastTickRef.current >= THROTTLE_MS) {
+        lastTickRef.current = now;
+        analyser.getByteFrequencyData(dataArray);
+        const newLevels: number[] = [];
+        for (let i = 0; i < NUM_POINTS; i++) {
+          const idx = Math.floor((i / NUM_POINTS) * dataArray.length);
+          newLevels.push(dataArray[idx] / 255);
+        }
+        setLevels(newLevels);
       }
-      setLevels(newLevels);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -114,7 +133,7 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
       analyser.disconnect();
       ctx.close();
     };
-  }, [audioSrc]);
+  }, [audioSrc, animationsEnabled]);
 
   const togglePlayback = () => {
     const audio = audioRef.current;
@@ -134,9 +153,8 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Determine visual state
   const hasAudio = !!audioSrc;
-  const showVisualizer = hasAudio;
+  const showVisualizer = hasAudio && animationsEnabled;
   const orbActive = isRecording || isProcessing || isPlaying;
 
   const handleClick = () => {
@@ -149,15 +167,16 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
     }
   };
 
-  // Draw points around circle
+  // Draw points around circle — skip when animations disabled
   useEffect(() => {
+    if (!animationsEnabled) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const size = 280;
-    canvas.width = size * 2; // retina
+    canvas.width = size * 2;
     canvas.height = size * 2;
     ctx.scale(2, 2);
 
@@ -177,40 +196,33 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
       const dotSize = 2.5 + level * 3;
       const alpha = 0.3 + level * 0.7;
 
-      // Glow
-      ctx.beginPath();
-      ctx.arc(x, y, dotSize + 3, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(180, 70%, 50%, ${alpha * 0.3})`;
-      ctx.fill();
-
-      // Dot
+      // Single draw pass — skip glow for perf
       ctx.beginPath();
       ctx.arc(x, y, dotSize, 0, Math.PI * 2);
       ctx.fillStyle = `hsla(180, 70%, 50%, ${alpha})`;
       ctx.fill();
     }
-  }, [levels]);
+  }, [levels, animationsEnabled]);
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Orb container */}
       <div className="relative w-[280px] h-[280px] flex items-center justify-center">
-        {/* Visualizer canvas */}
-        <canvas
-          ref={canvasRef}
-          className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${
-            showVisualizer ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ width: 280, height: 280 }}
-        />
+        {animationsEnabled && (
+          <canvas
+            ref={canvasRef}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${
+              showVisualizer ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ width: 280, height: 280 }}
+          />
+        )}
 
-        {/* Central button */}
         <button
           onClick={handleClick}
           disabled={disabled && !isRecording && !hasAudio}
           className={`
             relative z-10 rounded-full flex items-center justify-center
-            transition-all duration-500 ease-out
+            ${animationsEnabled ? "transition-all duration-500 ease-out" : ""}
             ${showVisualizer
               ? "w-24 h-24"
               : isRecording
@@ -222,24 +234,32 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
               : isPlaying
                 ? "bg-primary/20 border-2 border-primary/60 shadow-[0_0_40px_hsl(180_70%_50%/0.4)]"
                 : isProcessing
-                  ? "bg-primary/10 border-2 border-primary/30 animate-pulse"
+                  ? `bg-primary/10 border-2 border-primary/30 ${animationsEnabled ? "animate-pulse" : ""}`
                   : hasAudio
-                    ? "bg-primary/15 border-2 border-primary/40 hover:border-primary/60 hover:shadow-[0_0_30px_hsl(180_70%_50%/0.3)]"
-                    : "bg-surface border-2 border-border hover:border-primary/50 hover:shadow-[0_0_30px_hsl(180_70%_50%/0.2)]"
+                    ? `bg-primary/15 border-2 border-primary/40 ${animationsEnabled ? "hover:border-primary/60 hover:shadow-[0_0_30px_hsl(180_70%_50%/0.3)]" : ""}`
+                    : `bg-surface border-2 border-border ${animationsEnabled ? "hover:border-primary/50 hover:shadow-[0_0_30px_hsl(180_70%_50%/0.2)]" : ""}`
             }
             ${disabled && !isRecording && !hasAudio ? "opacity-40 pointer-events-none" : "cursor-pointer"}
           `}
         >
           {isRecording ? (
             <div className="flex flex-col items-center gap-1">
-              <span className="relative flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-destructive" />
-              </span>
+              {animationsEnabled ? (
+                <span className="relative flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-destructive" />
+                </span>
+              ) : (
+                <span className="inline-flex rounded-full h-4 w-4 bg-destructive" />
+              )}
               <Square className="w-5 h-5 text-destructive mt-1" />
             </div>
           ) : isProcessing ? (
-            <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            animationsEnabled ? (
+              <div className="w-8 h-8 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
+            ) : (
+              <span className="text-xs font-display text-primary">…</span>
+            )
           ) : hasAudio ? (
             isPlaying ? (
               <div className="flex gap-1 items-end h-6">
@@ -248,8 +268,8 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
                     key={i}
                     className="w-1 bg-primary rounded-full"
                     style={{
-                      height: `${12 + levels[i * 6] * 16}px`,
-                      transition: "height 0.1s ease",
+                      height: animationsEnabled ? `${12 + levels[i * 6] * 16}px` : "16px",
+                      transition: animationsEnabled ? "height 0.1s ease" : "none",
                     }}
                   />
                 ))}
@@ -264,15 +284,14 @@ export function VoiceOrb({ onRecorded, disabled, audioSrc, isProcessing, onPlayb
           )}
         </button>
 
-        {/* Ambient glow ring */}
-        {!showVisualizer && !isRecording && !isProcessing && (
+        {/* Ambient glow ring — only with animations */}
+        {animationsEnabled && !showVisualizer && !isRecording && !isProcessing && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-36 h-36 rounded-full border border-border/30 animate-pulse-glow" />
           </div>
         )}
       </div>
 
-      {/* Status label */}
       <div className="text-center font-display text-sm">
         {isRecording ? (
           <span className="text-destructive">Recording {fmt(duration)} — tap to stop</span>
