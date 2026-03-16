@@ -20,6 +20,7 @@ function getCompletedStages(current: PipelineStage): PipelineStage[] {
 
 const Index = () => {
   const { state, processAudio, reset, onPlaybackEnd } = useVoicePipeline();
+  const { animationsEnabled, toggleAnimations } = useAnimations();
   const isProcessing = !["idle", "complete", "error"].includes(state.stage);
 
   // Past conversation pairs (exclude the current exchange still displayed)
