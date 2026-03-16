@@ -66,6 +66,7 @@ const Index = () => {
                 New conversation
               </button>
             )}
+          </div>
         </div>
       </header>
 
