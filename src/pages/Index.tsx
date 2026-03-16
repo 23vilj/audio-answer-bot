@@ -147,7 +147,7 @@ const Index = () => {
 
           {/* AI Response */}
           {state.aiResponse && (
-            <div className="space-y-2 animate-float-up">
+            <div className={`space-y-2 ${animationsEnabled ? "animate-float-up" : ""}`}>
               <p className="text-xs font-display text-muted-foreground uppercase tracking-wider px-1">
                 AI Response
               </p>
