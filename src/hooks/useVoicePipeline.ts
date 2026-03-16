@@ -194,7 +194,7 @@ export function useVoicePipeline() {
 
       // Send any remaining text to TTS
       const remaining = fullText.slice(processedUpTo).trim();
-      if (remaining) {
+      if (remaining.length > 0) {
         ttsPromises.push(enqueueTTS(remaining));
       }
 
