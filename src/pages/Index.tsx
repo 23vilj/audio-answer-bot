@@ -48,15 +48,24 @@ const Index = () => {
             </div>
             <h1 className="text-lg font-bold tracking-tight">Voice Oracle</h1>
           </div>
-          {state.stage !== "idle" && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={reset}
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors font-display"
+              onClick={toggleAnimations}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-display"
+              title={animationsEnabled ? "Disable animations" : "Enable animations"}
             >
-              <RotateCcw className="w-3.5 h-3.5" />
-              New conversation
+              {animationsEnabled ? <Sparkles className="w-3.5 h-3.5" /> : <ZapOff className="w-3.5 h-3.5" />}
+              {animationsEnabled ? "Effects on" : "Effects off"}
             </button>
-          )}
+            {state.stage !== "idle" && (
+              <button
+                onClick={reset}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground font-display"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                New conversation
+              </button>
+            )}
         </div>
       </header>
 
